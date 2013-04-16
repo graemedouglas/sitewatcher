@@ -3,7 +3,15 @@
 ###	Command line tool for monitoring content changes of a web page locally.
 ###	
 ###	Written by Graeme Douglas.
-###	
+###	Modified by Giuseppe Burtini in April 2013
+###
+###	TODO: display the change that occurred (optionally)
+###	TODO: produce an output of "persistent watches" ... something like sitewatcher.rb --list
+###	TODO: make the PStore file configurable.
+###	TODO: make date format configurable.
+###	TODO: option to store all changes (copies, or at least a diff that can reproduce all versions of the original file) for forensic/analytical reasons
+###	TODO: improve linefeed handling / output format
+###
 ###	Please refer to license.md for licensing information.
 
 require 'pstore'
@@ -31,7 +39,7 @@ def get_source_contents(url)
 	return string
 end
 
-def persistant_source_changed?(domain, location = '/')
+def persistent_source_changed?(domain, location = '/')
 	source = get_source_contents(domain+location)
 	
 	hashed = source		# TODO: Hash using predictable hash function.
@@ -56,21 +64,26 @@ def instant_watch(domain, location = '/')
 	
 	count = 0
 	
-	while init_source == source and count < $options.request_limit
-		sleep $options.wait_time
-		
+	while true 
+		count+=1
+		if (count > $options.request_limit and $options.request_limit > 0)
+			puts "No change found before request limit reached."
+			exit()
+		end
+
 		source = get_source_contents(domain+location)
 		
 		if init_source == source
-			puts "No change at #{domain+location}"
+			print "\rNo change at #{domain+location}"
+			$stdout.flush
+		else	
+			# TODO: make date format an option.
+			puts "\r#{domain+location} changed at " + Time.now.strftime("%d/%m/%Y %H:%M:%S") 
 		end
-		count+=1
-	end
-	
-	if init_source != source
-		puts "Changed!"
-	else
-		puts "No change found before request limit reached."
+
+
+		# sleep at end (so that first request happens immediately)
+		sleep $options.wait_time
 	end
 end
 ################################################################################
@@ -79,11 +92,10 @@ end
 ## Default options.
 $options.exec_type = EXEC_TYPE_INSTANT
 $options.wait_time = 2
-$options.request_limit = 10000000
-$options.source = "http://www.reddit.com"	# TODO: Must be better way?
+$options.request_limit = -1
 
 OptionParser.new do |opts|
-	opts.banner = "Usage: sitewatcher.rb -s <site> [options]"
+	opts.banner = "Usage: sitewatcher.rb [options] <site>"
 	
 	## Options parsing.
 	opts.on("-h", "--help",
@@ -94,6 +106,7 @@ OptionParser.new do |opts|
 	
 	opts.on("-s", "--source <s>", String,
 	 "Set source location") do |s|
+		# note if you don't set this it rips it from the last argument
 		$options.source = s
 	end
 	
@@ -112,6 +125,10 @@ OptionParser.new do |opts|
 		$options.request_limit = l
 	end
 end.parse!
+
+$options.source = ARGV[0]	# last remaining argument (opts will remove the rest) 
+
+
 ################################################################################
 
 ### If this file executed ######################################################
@@ -119,7 +136,7 @@ if __FILE__ == $0
 	if EXEC_TYPE_INSTANT == $options.exec_type
 		instant_watch($options.source)
 	else
-		result = persistant_source_changed?($options.source)
+		result = persistent_source_changed?($options.source)
 		if true == result
 			puts "Changed!"
 		elsif false == result
