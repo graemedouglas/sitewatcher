@@ -24,6 +24,8 @@ require 'ostruct'
 ## Execution types.
 EXEC_TYPE_LOOKUP  = 0
 EXEC_TYPE_INSTANT = 1
+EXEC_COMMAND	  = "ruby sitewatcher"
+USAGE_BANNER	  = "Usage: " + EXEC_COMMAND + " <source> [options]"
 ################################################################################
 
 ### Global Variables ###########################################################
@@ -64,6 +66,7 @@ def instant_watch(domain, location = '/')
 	source = String.new(init_source)
 	
 	count = 0
+	nochangecount = 1
 	
 	while true 
 		count+=1
@@ -75,17 +78,26 @@ def instant_watch(domain, location = '/')
 
 		source = get_source_contents(domain+location)
 		
+		message = nil
 		if init_source == source
-			print "\rNo change at #{domain+location}"
-			$stdout.flush
-		else	
+			message = "No change at #{domain+location} ("+
+					nochangecount.to_s+")"
+			nochangecount+=1
+		else
 			# TODO: make date format an option.
-			puts "\r#{domain+location} changed at "+
+			message = "#{domain+location} changed at "+
 				Time.now.strftime("%d/%m/%Y %H:%M:%S") 
+			nochangecount = 1
 		end
+		if $options.verbose
+			puts message
+		else
+			print "\r"+message
+		end
+		$stdout.flush
 
 
-		# sleep at end (so that first request happens immediately)
+		# Sleep at end (so that first request happens immediately)
 		sleep $options.wait_time
 	end
 end
@@ -96,9 +108,11 @@ end
 $options.exec_type = EXEC_TYPE_INSTANT
 $options.wait_time = 2
 $options.request_limit = -1
+$options.verbose = false
+$options.source = nil
 
 OptionParser.new do |opts|
-	opts.banner = "Usage: sitewatcher.rb [options] <site>"
+	opts.banner = USAGE_BANNER
 	
 	## Options parsing.
 	opts.on("-h", "--help",
@@ -127,13 +141,22 @@ OptionParser.new do |opts|
 	 "Limit number of checks performed") do |l|
 		$options.request_limit = l
 	end
+	
+	opts.on("-v", "--verbose",
+	 "Log all changes without rewriting line") do
+		$options.verbose = true
+	end
 end.parse!
 
-$options.source = ARGV[0]	# last remaining argument (options handles rest)
+$options.source = ARGV[0]	# Only remaining argument (options handles rest)
 ################################################################################
 
 ### If this file executed ######################################################
 if __FILE__ == $0
+	if nil == $options.source
+		abort(USAGE_BANNER + "\n\t-You must include a source to watch!")
+	end
+	
 	if EXEC_TYPE_INSTANT == $options.exec_type
 		instant_watch($options.source)
 	else
