@@ -11,6 +11,7 @@
 ###	TODO: make date format configurable.
 ###	TODO: option to store all changes (copies, or at least a diff that can reproduce all versions of the original file) for forensic/analytical reasons
 ###	TODO: improve linefeed handling / output format
+###	TODO: support multiple sites at once
 ###
 ###	Please refer to license.md for licensing information.
 
