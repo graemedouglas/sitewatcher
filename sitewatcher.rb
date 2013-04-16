@@ -67,7 +67,8 @@ def instant_watch(domain, location = '/')
 	
 	while true 
 		count+=1
-		if (count > $options.request_limit and $options.request_limit > 0)
+		if count > $options.request_limit and
+		   $options.request_limit > 0
 			puts "No change found before request limit reached."
 			exit()
 		end
@@ -79,7 +80,8 @@ def instant_watch(domain, location = '/')
 			$stdout.flush
 		else	
 			# TODO: make date format an option.
-			puts "\r#{domain+location} changed at " + Time.now.strftime("%d/%m/%Y %H:%M:%S") 
+			puts "\r#{domain+location} changed at "+
+				Time.now.strftime("%d/%m/%Y %H:%M:%S") 
 		end
 
 
@@ -107,7 +109,7 @@ OptionParser.new do |opts|
 	
 	opts.on("-s", "--source <s>", String,
 	 "Set source location") do |s|
-		# note if you don't set this it rips it from the last argument
+		# If not set, rips from last argument
 		$options.source = s
 	end
 	
@@ -127,9 +129,7 @@ OptionParser.new do |opts|
 	end
 end.parse!
 
-$options.source = ARGV[0]	# last remaining argument (opts will remove the rest) 
-
-
+$options.source = ARGV[0]	# last remaining argument (options handles rest)
 ################################################################################
 
 ### If this file executed ######################################################
