@@ -24,12 +24,13 @@ require 'ostruct'
 ## Execution types.
 EXEC_TYPE_LOOKUP  = 0
 EXEC_TYPE_INSTANT = 1
-EXEC_COMMAND	  = "ruby sitewatcher"
+BASIC_NAME	  = "watch"
+EXEC_COMMAND	  = "ruby " + BASIC_NAME + ".rb"
 USAGE_BANNER	  = "Usage: " + EXEC_COMMAND + " <source> [options]"
 ################################################################################
 
 ### Global Variables ###########################################################
-$store = PStore.new("sitewatcher.pstore")
+$store = PStore.new(BASIC_NAME+".pstore")
 $options = OpenStruct.new
 ################################################################################
 
